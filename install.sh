@@ -1,21 +1,16 @@
 #!/bin/bash
 echo "NetherWipe Installer für macOS"
 
-# Homebrew Prüfung
-if ! command -v brew &> /dev/null; then
-    echo "Homebrew wird installiert..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
+# Homebrew Abhängigkeiten (ohne hping3)
+brew install dsniff aircrack-ng python-tk
 
-# Abhängigkeiten über brew
-echo "Installiere hping3, arpspoof, aircrack-ng, python-tk..."
-brew install hping3 arpspoof aircrack-ng python-tk
+# Virtuelle Umgebung erstellen
+python3 -m venv venv
+source venv/bin/activate
 
-# Python Pakete
-echo "Installiere Python Pakete..."
-pip3 install -r requirements.txt
+# Python Pakete in venv installieren
+pip install scapy requests
 
-# Ausführbarkeit des GUI-Skripts
-chmod +x NetherWipe.py
-
-echo "Fertig. Starte mit: sudo python3 NetherWipe.py"
+echo "Fertig. Starte mit:"
+echo "source venv/bin/activate"
+echo "sudo env PATH=\"\$PATH\" python3 NetherWipe.py"
