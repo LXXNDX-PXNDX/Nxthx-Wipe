@@ -1,4 +1,4 @@
-# NetherWipe – WiFi Destruction Tool for macOS
+# NxthxWipe – WiFi Destruction Tool for macOS
 
 **Author:** LXXNDX-PXNDX
 **Version:** 1.0  
@@ -6,9 +6,9 @@
 
 ---
 
-## 📦 What is NetherWipe?
+## 📦 What is NxthxWipe?
 
-NetherWipe is a GUI tool that takes down every device in your WiFi network.  
+NxthxWipe is a GUI tool that takes down every device in your WiFi network.  
 It launches DoS attacks, ARP spoofing, tries to reset the router, and kicks all clients.
 
 **Simply put:** You enter the router IP, click a button – and the network dies.
@@ -24,7 +24,7 @@ It launches DoS attacks, ARP spoofing, tries to reset the router, and kicks all 
 
 ### 2. Download files
 Place these files in one folder:
-- `NetherWipe.py`
+- `NxthxWipe.py`
 - `requirements.txt`
 - `install.sh`
 
