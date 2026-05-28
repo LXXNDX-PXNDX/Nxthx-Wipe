@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import subprocess
-import sys
+# Author: LXXNDX-PXNDX
 import threading
 import time
 import random
@@ -34,7 +33,7 @@ class NetherWipe:
         self.log_area = scrolledtext.ScrolledText(root, width=70, height=20, bg="#2d2d3a", fg="#00ff99", font=("Courier", 10))
         self.log_area.pack(pady=10)
 
-        self.log("NetherWipe gestartet")
+        self.log("NetherWipe gestartet – von LXXNDX-PXNDX")
 
     def log(self, msg):
         self.log_area.insert(END, f"[{time.strftime('%H:%M:%S')}] {msg}\n")
