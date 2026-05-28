@@ -23,7 +23,8 @@ It launches DoS attacks, ARP spoofing, tries to reset the router, and kicks all 
 - Admin rights (sudo)
 
 ### 2. Download files
-Place these files in one folder:
+Place these files in one folder or download the latest Release here:
+
 - `NxthxWipe.py`
 - `requirements.txt`
 - `install.sh`
