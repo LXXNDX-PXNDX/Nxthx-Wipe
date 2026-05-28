@@ -23,8 +23,9 @@ It launches DoS attacks, ARP spoofing, tries to reset the router, and kicks all 
 - Admin rights (sudo)
 
 ### 2. Download files
-Place these files in one folder or download the latest Release here: [#](https://github.com/LXXNDX-PXNDX/Nxthx-Wipe/releases/tag/Hack)
-
+Download the latest Release here: [Latest Release of NxthxWipe](https://github.com/LXXNDX-PXNDX/Nxthx-Wipe/releases/tag/Hack)
+or
+Place these files in one folder  
 - `NxthxWipe.py`
 - `requirements.txt`
 - `install.sh`
