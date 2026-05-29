@@ -34,7 +34,7 @@ brew install python-tk hping3 arpspoof
 
 ### 3. Clone or download the repository
 ```bash
-git clone https://github.com/LXXNDX-PXNDX/Nxthx-Wipe.git
+git clone https://github.com/LXXNDX-PXNDX/Nxthx-Wipe.git or download the latest release.
 cd Nxthx-Wipe
 ```
 
