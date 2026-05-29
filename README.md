@@ -29,43 +29,62 @@ It performs:
 
 ### 2. Install required system packages
 ```bash
-brew install python-tk
-3. Clone or download the repository
-bash
+brew install python-tk hping3 arpspoof
+```
+
+### 3. Clone or download the repository
+```bash
 git clone https://github.com/LXXNDX-PXNDX/Nxthx-Wipe.git
 cd Nxthx-Wipe
-4. Set up a virtual environment
-bash
+```
+
+### 4. Set up a virtual environment
+```bash
 python3 -m venv venv
 source venv/bin/activate
-5. Install Python dependencies
-bash
+```
+
+### 5. Install Python dependencies
+```bash
 pip install scapy requests
-6. Make the script executable
-bash
+```
+
+### 6. Make the script executable
+```bash
 chmod +x NxthxWipe.py
-How to Use
+```
+
+---
+
+## How to Use
+
+### Start the tool
 Start the tool with root privileges (required for raw packet sending):
 
-bash
+```bash
 sudo env PATH="$PATH" python3 NxthxWipe.py
-Note: sudo env PATH="$PATH" ensures that sudo inherits the virtual environment’s Python.
+```
 
-Step by step
-You see a banner and a prompt:
-Router IP (e.g. 192.168.1.1):
-– Enter your router’s IP and press Enter.
+**Note:** `sudo env PATH="$PATH"` ensures that sudo inherits the virtual environment's Python.
 
-The tool scans the network for devices.
+### Step-by-step usage
 
-It launches SYN flood + ARP spoofing on every device.
+1. You see a banner and a prompt:
+   ```
+   Router IP (e.g. 192.168.1.1):
+   ```
+   Enter your router's IP and press Enter.
 
-It attempts to factory reset the router via admin panel URLs.
+2. The tool scans the network for devices.
 
-The attack runs until you press Enter again.
+3. It launches SYN flood + ARP spoofing on every device.
 
-Example output
-text
+4. It attempts to factory reset the router via admin panel URLs.
+
+5. The attack runs until you press Enter again.
+
+### Example output
+```
 ╔═══════════════════════════════════════╗
 ║       NxthWipe – Terminal Edition     ║
 ║         von LXXNDX-PXNDX              ║
@@ -82,34 +101,44 @@ Angriff startet in 3 Sekunden... Drücke Ctrl+C zum Abbrechen.
 [23:15:04] ARP-Spoofing gestartet: 192.168.1.10 <-> 192.168.1.1
 ...
 [23:15:10] Alle Angriffe gestartet. Drücke Enter, um zu stoppen.
+```
+
 Press Enter → attacks stop.
 
-Important Notes
-Use only on your own network – attacking others is illegal.
+---
 
-Root privileges are mandatory.
+## ⚠️ Important Notes
 
-Devices recover shortly after you stop the attack.
+| Note | Details |
+|------|---------|
+| **Legal** | Use only on your own network – attacking others is illegal. |
+| **Privileges** | Root privileges are mandatory. |
+| **Recovery** | Devices recover shortly after you stop the attack. |
+| **Credentials** | Some routers may resist reset attempts if they use non‑default credentials. |
+| **Network** | For best results, run the tool from a machine connected via Ethernet (WiFi works too but may be less stable). |
 
-Some routers may resist reset attempts if they use non‑default credentials.
+---
 
-For best results, run the tool from a machine connected via Ethernet (WiFi works too but may be less stable).
+## 🔧 Troubleshooting
 
-Troubleshooting
-Problem	Solution
-ModuleNotFoundError: No module named 'scapy'	Activate venv: source venv/bin/activate then pip install scapy
-Operation not permitted	Always use sudo
-No devices found	Check that you are on the same WiFi network as the router
-_tkinter error	This is the CLI version – ignore or run brew install python-tk
-Files in this repository
-NxthxWipe.py – main script (CLI version)
+| Problem | Solution |
+|---------|----------|
+| `ModuleNotFoundError: No module named 'scapy'` | Activate venv: `source venv/bin/activate` then `pip install scapy` |
+| `Operation not permitted` | Always use `sudo` |
+| No devices found | Check that you are on the same WiFi network as the router |
+| `_tkinter` error | This is the CLI version – ignore or run `brew install python-tk` |
 
-requirements.txt – Python dependencies (scapy, requests)
+---
 
-install.sh – optional setup script
+## 📁 Files in this repository
 
-README.md – this file
+- **NxthxWipe.py** – main script (CLI version)
+- **requirements.txt** – Python dependencies (scapy, requests)
+- **install.sh** – optional setup script
+- **README.md** – this file
 
-Disclaimer
+---
+
+## ⚖️ Disclaimer
+
 This tool is for educational purposes only. You may only test it on networks you own or have explicit permission to assess. The author assumes no liability for any misuse or damage.
-
