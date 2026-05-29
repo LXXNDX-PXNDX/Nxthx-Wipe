@@ -62,7 +62,7 @@ chmod +x NxthxWipe.py
 Start the tool with root privileges (required for raw packet sending):
 
 ```bash
-sudo env PATH="$PATH" python3 NxthxWipe.py
+sudo env PATH="$PATH" python3 NxthWipe.py
 ```
 
 **Note:** `sudo env PATH="$PATH"` ensures that sudo inherits the virtual environment's Python.
